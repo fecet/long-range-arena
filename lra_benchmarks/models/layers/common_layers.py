@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common layers used in models."""
-from flax.deprecated import nn
+# from flax.deprecated import nn
+import flax.linen as nn
 from jax import lax
 import jax.numpy as jnp
 import numpy as np
@@ -24,7 +25,8 @@ class Embed(nn.Module):
   A parameterized function from integers [0, n) to d-dimensional vectors.
   """
 
-  def apply(self,
+  nn.compact
+  def __call__(self,
             inputs,
             num_embeddings,
             features,
@@ -80,7 +82,8 @@ def sinusoidal_init(max_len=2048):
 class AddPositionEmbs(nn.Module):
   """Adds (optionally learned) positional embeddings to the inputs."""
 
-  def apply(self,
+  @nn.compact
+  def __call__(self,
             inputs,
             inputs_positions=None,
             max_len=512,
@@ -141,7 +144,8 @@ class AddPositionEmbs(nn.Module):
 class MlpBlock(nn.Module):
   """Transformer MLP block."""
 
-  def apply(self,
+  @nn.compact
+  def __call__(self,
             inputs,
             mlp_dim,
             dtype=jnp.float32,
@@ -152,14 +156,14 @@ class MlpBlock(nn.Module):
             bias_init=nn.initializers.normal(stddev=1e-6)):
     """Applies Transformer MlpBlock module."""
     actual_out_dim = inputs.shape[-1] if out_dim is None else out_dim
-    x = nn.Dense(inputs, mlp_dim, dtype=dtype,
-                 kernel_init=kernel_init, bias_init=bias_init)
+    x = nn.Dense(mlp_dim, dtype=dtype,
+                 kernel_init=kernel_init, bias_init=bias_init)(inputs)
     x = nn.gelu(x)
-    x = nn.dropout(x, rate=dropout_rate, deterministic=deterministic)
+    x = nn.Dropout(rate=dropout_rate)(x,deterministic=deterministic)
     output = nn.Dense(
-        x, actual_out_dim, dtype=dtype, kernel_init=kernel_init,
-        bias_init=bias_init)
-    output = nn.dropout(output, rate=dropout_rate, deterministic=deterministic)
+        actual_out_dim, dtype=dtype, kernel_init=kernel_init,
+        bias_init=bias_init)(x)
+    output = nn.Dropout(rate=dropout_rate)(output, deterministic=deterministic)
     return output
 
 
@@ -188,9 +192,10 @@ def classifier_head(encoded, num_classes, mlp_dim, pooling_mode='MEAN'):
     encoded = encoded[:, 0]
   else:
     raise NotImplementedError('Pooling not supported yet.')
-  encoded = nn.Dense(encoded, mlp_dim, name='mlp')
-  encoded = nn.relu(encoded)
-  encoded = nn.Dense(encoded, num_classes, name='logits')
+
+  encoded = nn.Dense(mlp_dim, name='mlp')(encoded)
+  encoded = nn.selu(encoded)
+  encoded = nn.Dense(num_classes, name='logits')(encoded)
   return encoded
 
 

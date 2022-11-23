@@ -1,4 +1,4 @@
-xformer="local"
+xformer="linformer"
 
 PYTHONPATH="$(pwd)":"$PYTHON_PATH" python lra_benchmarks/listops/train.py \
       --config="lra_benchmarks/listops/configs/${xformer}_base.py" \

@@ -2,3 +2,4 @@
 lra_benchmarks/__pycache__
 
 *.pyc
+lra_benchmarks/listops/.ipynb_checkpoints
