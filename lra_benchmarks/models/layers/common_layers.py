@@ -25,7 +25,7 @@ class Embed(nn.Module):
   A parameterized function from integers [0, n) to d-dimensional vectors.
   """
 
-  nn.compact
+  @nn.compact
   def __call__(self,
             inputs,
             num_embeddings,
